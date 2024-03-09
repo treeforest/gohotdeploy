@@ -14,8 +14,8 @@ import (
 	"sync"
 	"syscall"
 
-	_ "github.com/treeforest/gohotdeploy/statik"
 	"github.com/treeforest/gohotdeploy/config"
+	_ "github.com/treeforest/gohotdeploy/statik"
 	"github.com/treeforest/gohotdeploy/webhook"
 
 	"github.com/gookit/goutil/fsutil"
