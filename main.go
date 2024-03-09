@@ -15,7 +15,7 @@ import (
 	"syscall"
 
 	_ "github.com/treeforest/gohotdeploy/statik"
-	"github.com/treeforest/gohotdeploy/util"
+	"github.com/treeforest/gohotdeploy/config"
 	"github.com/treeforest/gohotdeploy/webhook"
 
 	"github.com/gookit/goutil/fsutil"
