@@ -2,6 +2,8 @@
 
 GoHotDeploy 是一个轻量级工具，通过 GitLab Webhooks 实现 Go 应用程序的热部署。
 
+[English](https://github.com/treeforest/gohotdeploy/blob/main/README.md) | 简体中文
+
 ## 使用方法
 
 1. 安装 GoHotDeploy：
@@ -46,4 +48,4 @@ GoHotDeploy 是一个轻量级工具，通过 GitLab Webhooks 实现 Go 应用�
 
 ## 许可证
 
-[GNU General Public License v3.0](https://github.com/cosmtrek/air/blob/v1.40.4/LICENSE)
+[GNU General Public License v3.0](https://github.com/treeforest/gohotdeploy/blob/main/LICENSE)

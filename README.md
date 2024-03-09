@@ -2,7 +2,7 @@
 
 GoHotDeploy is a lightweight tool that enables hot deployment of Go applications using GitLab Webhooks.
 
-English | 简体中文
+English | [简体中文](https://github.com/treeforest/gohotdeploy/blob/main/README-zh_cn.md)
 
 ## Usage
 
@@ -48,5 +48,5 @@ English | 简体中文
 
 ## License
 
-[GNU General Public License v3.0](https://github.com/cosmtrek/air/blob/v1.40.4/LICENSE)
+[GNU General Public License v3.0](https://github.com/treeforest/gohotdeploy/blob/main/LICENSE)
 
