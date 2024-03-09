@@ -1,0 +1,5 @@
+port: 9001
+repositories:
+  - name: fcmp
+    build_dir: "."
+    run_args: "--config configs/server.yml"
