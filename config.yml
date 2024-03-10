@@ -1,5 +1,5 @@
-port: 9001
+port: 8080
 repositories:
-  - name: my-repo
+  my-repo:
     build_relative_dir: "."
     build_args_bin: ""

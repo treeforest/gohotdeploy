@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  gohotdeploy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gohotdeploy:latest
+    container_name: gohotdeploy
+    restart: always
+    ports:
+      - "8080:8080"

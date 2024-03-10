@@ -17,7 +17,7 @@ English | [简体中文](https://github.com/treeforest/gohotdeploy/blob/main/REA
    ```yaml
    port: 8080
    repositories:
-     - name: my-repo
+     my-repo:
        build_relative_dir: .
        build_args_bin: ""
    ```

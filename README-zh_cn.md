@@ -17,7 +17,7 @@ GoHotDeploy 是一个轻量级工具，通过 GitLab Webhooks 实现 Go 应用�
    ```yaml
    port: 8080
    repositories:
-     - name: my-repo
+     my-repo:
        build_relative_dir: .
        build_args_bin: ""
    ```
