@@ -1,5 +1,5 @@
 port: 9001
 repositories:
-  - name: fcmp
-    build_dir: "."
-    run_args: "--config configs/server.yml"
+  - name: my-repo
+    build_relative_dir: "."
+    build_args_bin: ""

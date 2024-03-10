@@ -36,7 +36,7 @@ func main() {
 	cfgPath := flag.String("config", "config.yml", "specify config yml path")
 	flag.Parse()
 
-	config, err := config.LoadConfig(*cfgPath)
+	serverConfig, err := config.LoadConfig(*cfgPath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot load config")
 	}
@@ -46,7 +46,7 @@ func main() {
 
 	waitGroup, ctx := errgroup.WithContext(ctx)
 
-	runHTTPServer(ctx, waitGroup, config)
+	runHTTPServer(ctx, waitGroup, serverConfig)
 
 	err = waitGroup.Wait()
 	if err != nil {
@@ -54,14 +54,14 @@ func main() {
 	}
 }
 
-func runHTTPServer(ctx context.Context, waitGroup *errgroup.Group, config *config.ServerConfig) {
-	ctrl := NewController()
+func runHTTPServer(ctx context.Context, waitGroup *errgroup.Group, serverConfig *config.ServerConfig) {
+	ctrl := NewController(serverConfig)
 
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", webhook.Handler(ctrl.Dispatch(ctx, waitGroup)))
 
 	httpServer := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", config.Port),
+		Addr:    fmt.Sprintf("0.0.0.0:%d", serverConfig.Port),
 		Handler: mux,
 	}
 
@@ -95,12 +95,13 @@ func runHTTPServer(ctx context.Context, waitGroup *errgroup.Group, config *confi
 
 // Controller 是一个热部署控制器，主要负责将接收到的 GitLab 的 Webhook 事件分发到对应的仓库处理通道（Channel）。
 type Controller struct {
-	mutex      sync.Mutex          // 互斥锁，用于保护 channelMap 的并发访问
-	channelMap map[string]*Channel // 存储仓库处理通道的映射关系
-	statikFS   http.FileSystem     // 存储静态文件系统，用于加载静态资源
+	mutex      sync.Mutex           // 互斥锁，用于保护 channelMap 的并发访问
+	channelMap map[string]*Channel  // 存储仓库处理通道的映射关系
+	statikFS   http.FileSystem      // 存储静态文件系统，用于加载静态资源
+	conf       *config.ServerConfig // 配置信息
 }
 
-func NewController() *Controller {
+func NewController(conf *config.ServerConfig) *Controller {
 	statikFS, err := fs.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot load file system")
@@ -108,6 +109,7 @@ func NewController() *Controller {
 	return &Controller{
 		channelMap: make(map[string]*Channel),
 		statikFS:   statikFS,
+		conf:       conf,
 	}
 }
 
@@ -123,6 +125,11 @@ func (c *Controller) Dispatch(ctx context.Context, waitGroup *errgroup.Group) we
 
 		channelName := hook.Repository.Name
 
+		repo, ok := c.conf.Repositories[channelName]
+		if !ok {
+			return
+		}
+
 		c.mutex.Lock()
 		channel, ok := c.channelMap[channelName]
 		if !ok {
@@ -132,29 +139,35 @@ func (c *Controller) Dispatch(ctx context.Context, waitGroup *errgroup.Group) we
 		}
 		c.mutex.Unlock()
 
-		channel.Push(ctx, hook)
+		channel.Push(ctx, &Event{hook: hook, repo: repo})
 	}
 }
 
 // Channel 是用于处理 Webhook 事件的通道。
 type Channel struct {
-	name     string                // 仓库名
-	statikFS http.FileSystem       // 存储静态文件系统，用于加载静态资源
-	cmd      *exec.Cmd             //  执行 air 命令的 *exec.Cmd 对象
-	c        chan *webhook.Webhook // Webhook 事件通道
+	name     string          // 仓库名
+	statikFS http.FileSystem // 存储静态文件系统，用于加载静态资源
+	cmd      *exec.Cmd       //  执行 air 命令的 *exec.Cmd 对象
+	c        chan *Event     // Webhook 事件通道
+}
+
+// Event 代表一个 Webhook 事件
+type Event struct {
+	hook *webhook.Webhook
+	repo *config.RepositoryConfig
 }
 
 func NewChannel(name string, statikFS http.FileSystem) *Channel {
-	channel := &Channel{name: name, statikFS: statikFS, c: make(chan *webhook.Webhook, 16)}
+	channel := &Channel{name: name, statikFS: statikFS, c: make(chan *Event, 16)}
 	return channel
 }
 
 // Push 将 Webhook 事件推送到通道中进行处理。
-func (c *Channel) Push(ctx context.Context, hook *webhook.Webhook) {
+func (c *Channel) Push(ctx context.Context, event *Event) {
 	select {
 	case <-ctx.Done():
 		return
-	case c.c <- hook:
+	case c.c <- event:
 	}
 }
 
@@ -166,15 +179,16 @@ func (c *Channel) Loop(ctx context.Context) func() error {
 			case <-ctx.Done():
 				_ = c.cmd.Process.Kill()
 				return ctx.Err()
-			case hook := <-c.c:
-				c.hotDeploy(hook)
+			case e := <-c.c:
+				c.hotDeploy(e)
 			}
 		}
 	}
 }
 
 // hotDeploy 是热部署处理的逻辑，包括克隆仓库、更新仓库、提取 air 二进制文件、启动 air 命令等操作。
-func (c *Channel) hotDeploy(hook *webhook.Webhook) {
+func (c *Channel) hotDeploy(event *Event) {
+	hook := event.hook
 	repoDir := hook.Repository.Name
 
 	// 检查仓库目录是否存在，如果不存在则执行 git clone 命令进行克隆
@@ -204,7 +218,8 @@ func (c *Channel) hotDeploy(hook *webhook.Webhook) {
 
 	// 如果进程未启动或已经退出，则启动 air 命令
 	if c.cmd == nil || (c.cmd.ProcessState != nil && c.cmd.ProcessState.Exited()) {
-		cmd := shell.Command("./air", shell.WithDir(repoDir))
+		cmd := shell.Command(fmt.Sprintf(`./air -build.cmd="%s" -build.args_bin="%s"`,
+			event.repo.BuildCmd(), event.repo.BuildArgsBin), shell.WithDir(repoDir))
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 

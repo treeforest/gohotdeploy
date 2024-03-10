@@ -18,13 +18,13 @@ GoHotDeploy 是一个轻量级工具，通过 GitLab Webhooks 实现 Go 应用�
    port: 8080
    repositories:
      - name: my-repo
-       relative_build_dir: .
-       run_args: ""
+       build_relative_dir: .
+       build_args_bin: ""
    ```
 
-   将 `.` 替换为 Git 仓库中构建目录的相对路径。如果 `relative_build_dir` 为空，则默认为当前仓库目录。
+   将 `.` 替换为 Git 仓库中构建目录的相对路径。如果 `build_relative_dir` 为空，则默认为当前仓库目录。
 
-   修改 `run_args` 的值以包含在执行构建的二进制文件时传递的参数。如果 `run_args` 为空，则在程序执行时不会传递额外的参数。
+   修改 `build_args_bin` 的值以包含在执行构建的二进制文件时传递的参数。如果 `build_args_bin` 为空，则在程序执行时不会传递额外的参数。
 
 3. 启动 GoHotDeploy：
 

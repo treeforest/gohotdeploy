@@ -18,13 +18,13 @@ English | [简体中文](https://github.com/treeforest/gohotdeploy/blob/main/REA
    port: 8080
    repositories:
      - name: my-repo
-       relative_build_dir: .
-       run_args: ""
+       build_relative_dir: .
+       build_args_bin: ""
    ```
 
-   Replace `.` with the relative path to the build directory within your Git repository. If `relative_build_dir` is left empty, it defaults to the current directory of the repository.
+   Replace `.` with the relative path to the build directory within your Git repository. If `build_relative_dir` is left empty, it defaults to the current directory of the repository.
 
-   Modify the `run_args` value to include the desired arguments to be passed when executing the built binary. If `run_args` is left empty, no additional arguments will be passed during program execution.
+   Modify the `build_args_bin` value to include the desired arguments to be passed when executing the built binary. If `build_args_bin` is left empty, no additional arguments will be passed during program execution.
 
 3. Start GoHotDeploy:
 
